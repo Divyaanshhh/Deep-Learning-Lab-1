@@ -1,140 +1,204 @@
-# Deep Learning Lab 1 - Perceptron using NumPy
-
-A simple implementation of the **Perceptron Algorithm** in Python using **NumPy**. This program demonstrates binary classification by simulating the **AND Logic Gate**.
 
 ---
 
-##  Objective
+## 🐍 `Lab-1.py` — Copy & Paste
 
-To implement a simple Perceptron model using NumPy and train it to classify the outputs of an AND gate.
+```python
+"""
+Deep Learning Lab 1 - Perceptron using NumPy
+=============================================
 
----
+A simple implementation of the Perceptron Algorithm to simulate
+the AND Logic Gate using NumPy.
 
-## Technologies Used
+Author: Divyansh
+"""
 
-- Python 3.x
-- NumPy
-- Visual Studio Code
+import numpy as np
 
----
 
-##  Project Structure
+def step_function(x: float) -> int:
+    """
+    Step activation function.
+    
+    Returns 1 if x >= 0, otherwise returns 0.
+    
+    Args:
+        x: Weighted sum of inputs and bias
+        
+    Returns:
+        Binary output (0 or 1)
+    """
+    return 1 if x >= 0 else 0
 
-```
-Deep-Learning-Lab/
-│── Lab-1.py
-│── README.md
-└── .gitignore
-```
 
----
+def train_perceptron(
+    inputs: np.ndarray,
+    targets: np.ndarray,
+    learning_rate: float = 0.1,
+    epochs: int = 10,
+    verbose: bool = True
+) -> tuple[np.ndarray, float, list]:
+    """
+    Train a single-layer perceptron using the perceptron learning rule.
+    
+    Args:
+        inputs: Input dataset of shape (n_samples, n_features)
+        targets: Expected outputs of shape (n_samples,)
+        learning_rate: Step size for weight updates (default: 0.1)
+        epochs: Number of training iterations (default: 10)
+        verbose: Whether to print training progress (default: True)
+        
+    Returns:
+        Tuple of (trained_weights, trained_bias, training_history)
+    """
+    n_samples, n_features = inputs.shape
+    
+    # Initialize weights and bias with small random values
+    np.random.seed(42)  # For reproducibility
+    weights = np.random.randn(n_features) * 0.1
+    bias = 0.0
+    
+    history = []
+    
+    if verbose:
+        print("=" * 50)
+        print("      PERCEPTRON TRAINING STARTED")
+        print("=" * 50)
+        print(f"\nHyperparameters:")
+        print(f"  Learning Rate : {learning_rate}")
+        print(f"  Epochs        : {epochs}")
+        print(f"  Samples       : {n_samples}")
+        print(f"\nInitial Weights: {weights}")
+        print(f"Initial Bias   : {bias:.4f}")
+        print("\n" + "-" * 50)
+    
+    # Training loop
+    for epoch in range(epochs):
+        total_error = 0
+        
+        if verbose:
+            print(f"\nEpoch {epoch + 1}/{epochs}")
+            print("-" * 30)
+        
+        for i in range(n_samples):
+            # Forward pass: Compute weighted sum
+            weighted_sum = np.dot(inputs[i], weights) + bias
+            
+            # Apply activation function
+            prediction = step_function(weighted_sum)
+            
+            # Calculate error
+            error = targets[i] - prediction
+            total_error += abs(error)
+            
+            # Update weights and bias (Perceptron Learning Rule)
+            weights += learning_rate * error * inputs[i]
+            bias += learning_rate * error
+            
+            if verbose:
+                status = "✓ Correct" if error == 0 else f"✗ Error={error}"
+                print(f"  Sample {i+1}: {inputs[i]} | "
+                      f"Target={targets[i]}, Pred={prediction} | {status}")
+        
+        history.append(total_error)
+        
+        if verbose:
+            print(f"  Total Errors in Epoch {epoch + 1}: {total_error}")
+            
+        # Early stopping if perfectly classified
+        if total_error == 0:
+            if verbose:
+                print(f"\n🎉 Converged at Epoch {epoch + 1}!")
+            break
+    
+    return weights, bias, history
 
-##  Step-by-Step Setup
 
-### 1. Clone the Repository
+def predict(inputs: np.ndarray, weights: np.ndarray, bias: float) -> list[int]:
+    """
+    Make predictions using trained perceptron.
+    
+    Args:
+        inputs: Input dataset
+        weights: Trained weights
+        bias: Trained bias
+        
+    Returns:
+        List of predictions
+    """
+    predictions = []
+    for x in inputs:
+        weighted_sum = np.dot(x, weights) + bias
+        predictions.append(step_function(weighted_sum))
+    return predictions
 
-```bash
-git clone https://github.com/YOUR_USERNAME/Deep-Learning-Lab.git
-```
 
-### 2. Open the Project
+def main():
+    """Main execution function."""
+    
+    # ============================================
+    # AND Gate Dataset
+    # ============================================
+    inputs = np.array([
+        [0, 0],
+        [0, 1],
+        [1, 0],
+        [1, 1]
+    ])
+    
+    targets = np.array([0, 0, 0, 1])
+    
+    # ============================================
+    # Train the Perceptron
+    # ============================================
+    weights, bias, history = train_perceptron(
+        inputs=inputs,
+        targets=targets,
+        learning_rate=0.1,
+        epochs=10,
+        verbose=True
+    )
+    
+    # ============================================
+    # Display Results
+    # ============================================
+    print("\n" + "=" * 50)
+    print("      PERCEPTRON TRAINING COMPLETE")
+    print("=" * 50)
+    print(f"\nFinal Weights: {weights}")
+    print(f"Final Bias   : {bias:.4f}")
+    
+    # ============================================
+    # Make Predictions
+    # ============================================
+    predictions = predict(inputs, weights, bias)
+    
+    print("\n" + "-" * 40)
+    print("           PREDICTIONS")
+    print("-" * 40)
+    
+    correct = 0
+    for i in range(len(inputs)):
+        status = "✓" if predictions[i] == targets[i] else "✗"
+        print(f"Input: {inputs[i]} -> Output: {predictions[i]}  {status}")
+        if predictions[i] == targets[i]:
+            correct += 1
+    
+    accuracy = (correct / len(inputs)) * 100
+    print(f"\nAccuracy: {accuracy:.1f}%")
+    
+    # ============================================
+    # Decision Boundary Visualization (Text)
+    # ============================================
+    print("\n" + "=" * 50)
+    print("      DECISION BOUNDARY ANALYSIS")
+    print("=" * 50)
+    print(f"\nDecision Boundary Equation:")
+    print(f"  {weights[0]:.2f}*x₁ + {weights[1]:.2f}*x₂ + {bias:.2f} = 0")
+    print(f"\n  => x₂ = {-weights[0]/weights[1]:.2f}*x₁ + {-bias/weights[1]:.2f}")
+    print("\nThis line separates Class 0 from Class 1 in the 2D input space.")
 
-```bash
-cd Deep-Learning-Lab
-```
 
-### 3. Create a Virtual Environment
-
-**Windows**
-
-```bash
-python -m venv .venv
-```
-
-### 4. Activate the Virtual Environment
-
-**PowerShell**
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-**Command Prompt**
-
-```cmd
-.venv\Scripts\activate
-```
-
-### 5. Install Dependencies
-
-```bash
-pip install numpy
-```
-
-### 6. Run the Program
-
-```bash
-python Lab-1.py
-```
-
----
-
-##  Program Description
-
-The program performs the following steps:
-
-1. Imports the NumPy library.
-2. Creates the input dataset for the AND gate.
-3. Initializes weights and bias.
-4. Trains the perceptron using the learning rule.
-5. Updates weights and bias based on prediction errors.
-6. Displays the final weights, bias, and predictions.
-
----
-
-##  Input Dataset
-
-| Input 1 | Input 2 | Expected Output |
-|---------:|---------:|----------------:|
-| 0 | 0 | 0 |
-| 0 | 1 | 0 |
-| 1 | 0 | 0 |
-| 1 | 1 | 1 |
-
----
-
-##  Expected Output
-
-```
-Final Weights: [0.2 0.1]
-Final Bias: -0.2
-
-Predictions:
-Input: [0 0] -> Output: 0
-Input: [0 1] -> Output: 0
-Input: [1 0] -> Output: 0
-Input: [1 1] -> Output: 1
-```
-
-> *The learned weights may vary slightly depending on the training process, but the predictions should remain the same.*
-
----
-
-##  Concepts Covered
-
-- Perceptron
-- Binary Classification
-- Step Activation Function
-- Weight Update Rule
-- Supervised Learning
-- NumPy
-
----
-
-##  Author
-
-**Divyansh**
-
-Deep Learning Laboratory 
-
----
+if __name__ == "__main__":
+    main()
